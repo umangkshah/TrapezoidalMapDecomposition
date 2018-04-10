@@ -9,8 +9,10 @@
 #include <iostream>
 #include <vector>
 #include "Structs.hpp"
+#include "util.h"
 
 using namespace std;
+
 
 int main(int argc, const char * argv[]) {
     TMap tmap;
@@ -26,49 +28,60 @@ int main(int argc, const char * argv[]) {
     segments.push_back(Segment(p3, q3));
    
     //Bounding Box
-    Point b1(0,0); Point b2(100,0);
-    Point b3(0, 100);
-    Point b4(100, 100);
+    Point b_D(0,0); Point b_C(100,0);
+    Point b_A(0, 100);
+    Point b_B(100, 100);
     
     
-    segments.push_back(Segment(b1, b2));
-    segments.push_back(Segment(b2, b3));
-    segments.push_back(Segment(b1, b4));
-    segments.push_back(Segment(b4, b3));
-    Trapezoid bounding(b1, b2, b3, b4);
+//    segments.push_back(Segment(b1, b2));
+//    segments.push_back(Segment(b2, b3));
+//    segments.push_back(Segment(b1, b4));
+//    segments.push_back(Segment(b4, b3));
+    Trapezoid bounding(b_A, b_B, b_C, b_D, b_D, b_C);
     shared_ptr<Trapezoid> boundingBox( &bounding );
-    tmap.setTrapezoid(b1, boundingBox);
+    tmap.setTrapezoid(b_A, boundingBox);
     //put it in TMAP
+    
+    //Process segments 1 by 1
     for(std::vector<Segment>::iterator it = segments.begin(); it != segments.end(); it++){
         //i have *it
-        //
-        Trapezoid trap1 = search_tree.search(it->getPointP());
+
+        Trapezoid trap0 = search_tree.search(it->getPointP());
         Trapezoid trapN = search_tree.search(it->getPointQ());
-        if(trap1 == trapN){
+        if(trap0 == trapN){
             //contained
+            Trapezoid trapObject = tmap.getTrapezoid(trap0.getPointTopLeft());
+            vector<Trapezoid> result;
+            trapObject.split_contained(it->getPointP(), it->getPointQ(), result);
         }
         else{
-            //segment follow algo
-            //Let p and q be the left and right endpoint of si.
-//            2. Search with p in the search structure D to find Δ0. ---> trap0
+            //Update Trap1, which has p (left end point)
+            
+            //SEGMENT FOLLOW AGLORITHM TO GET NEXT TRAPEZOID BEING INTERSECTED:
+            
+//            2. Search with p in the search structure D to find Δ0. ---> trap1
             int j = 0;
             
 //            while q lies to the right of rightp(Δj)
-            Point rightP_tmp = trap1.getSupport(1);
+            Point rightP_tmp = trap0.getSupport(1);
             while(it->getPointQ().getXcoord() > rightP_tmp.getXcoord()){
-//                if rightp(Δj) lies above si
+//                if rightp(Trap_j) lies above si
                 
-//                double v1 = (it->getPointP().getXcoord() - rightP_tmp.getXcoord()) * (it->getPointQ().getYcoord() - rightP_tmp.getYcoord())
-//                double v2 = (it->getPointP().getYcoord() - rightP_tmp.getYcoord()) * (it->getPointQ().getXcoord() - rightP_tmp.getXcoord())
+//                double v1 = (it->getPointP().getXcoord() - rightP_tmp.getXcoord()) * (it->getPointQ().getYcoord() - rightP_tmp.getYcoord());
+//                double v2 = (it->getPointP().getYcoord() - rightP_tmp.getYcoord()) * (it->getPointQ().getXcoord() - rightP_tmp.getXcoord());
 //                double cross_product = v1 - v2;
                 
+                double cross_product = orientationTest(it->getPointP(), it->getPointQ(), rightP_tmp);
                 
-//                if cross_product > 0:
+                
+                if (cross_product > 0)
 //                    IT LIES ABOVE (LEFT)
+                    Trapezoid nextTrapezoid = search_tree.getBottomRight(rightP_tmp);
             // 6. then Let Δj+1 be the lower right neighbor of Δj.
                 //use search tree start at
-//                    elif xp < 0:
+                else if(cross_product < 0)
 //                    IT LIES BELOW (RIGHT)
+                    Trapezoid nextTrapezoid = search_tree.getTopRight(rightP_tmp);
 //                7. else Let Δj+1 be the upper right neighbor of Δj.
 //
                 
